@@ -7,5 +7,15 @@ namespace rentcarbike.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
+         private readonly string _connectionString;
+
+
+        public Database(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        
+    
     }
 }
