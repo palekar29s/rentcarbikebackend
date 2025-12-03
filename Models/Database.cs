@@ -95,6 +95,65 @@ namespace rentcarbike.Models
                 }
             }
         }
+//vehicle related query 
+        public List<VehicleClass> GetVehicles()
+        {
+            List<VehicleClass> vehicles = new List<VehicleClass>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    "SELECT id, Name, type, brand, model, priceperhour ,priceperday ,fueltype, transmission , status FROM SIGNUP", con))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            vehicles.Add(new VehicleClass
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                type = reader.GetString(2),
+                                brand = reader.GetString(3),
+                                model = reader.GetString(4),
+                                priceperday = reader.GetString(5),
+                                priceperhour = reader.GetString(6),
+                                fueltype = reader.GetString(7), 
+                                transmission = reader.GetString(8),
+                                status = reader.GetString(9)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return vehicles;
+        }
+        public void InsertVehicle(VehicleClass vehicles)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+                string query = " INSERT INTO vehicle(id, Name, type, brand, model, priceperhour ,priceperday ,fueltype, transmission , status) VALUES (@id, @Name, @type, @brand,@model, @priceperhour ,@priceperday ,@fueltype, @transmission , @status)";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@id", vehicles.Id);
+                    cmd.Parameters.AddWithValue("@Name", vehicles.Name);
+                    cmd.Parameters.AddWithValue("@type", vehicles.type);
+                    cmd.Parameters.AddWithValue("@brand", vehicles.brand);
+                    cmd.Parameters.AddWithValue("@model", vehicles.model);
+                    cmd.Parameters.AddWithValue("@priceperhour", vehicles.priceperhour);
+                    cmd.Parameters.AddWithValue("@priceperday", vehicles.priceperday);
+                    cmd.Parameters.AddWithValue("@fueltype", vehicles.fueltype);
+                    cmd.Parameters.AddWithValue("@transmission", vehicles.transmission);
+                    cmd.Parameters.AddWithValue("@status", vehicles.status);
+                    cmd.ExecuteNonQuery();
+
+                }
+            }
+        }
 
 
 
