@@ -13,6 +13,8 @@ namespace rentcarbike.Models
         {
             _connectionString = connectionString;
         }
+
+        //this is the code related to the login 
         public List<UsersClass> GetAllSignups()
         {
             List<UsersClass> signups = new List<UsersClass>();
