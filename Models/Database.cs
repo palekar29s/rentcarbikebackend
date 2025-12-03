@@ -243,9 +243,9 @@ namespace rentcarbike.Models
 
         //review related query 
 
-        public List<ReviewClass> getreview()
+        public List<ReviewsClass> getreview()
         {
-            List<ReviewClass> reviews = new List<ReviewClass>();
+            List<ReviewsClass> reviews = new List<ReviewsClass>();
 
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
@@ -258,7 +258,7 @@ namespace rentcarbike.Models
                     {
                         while (reader.Read())
                         {
-                            reviews.Add(new ReviewClass
+                            reviews.Add(new ReviewsClass
                             {
                                 Id = reader.GetInt32(0),
                                 Name = reader.GetString(1),
@@ -275,7 +275,7 @@ namespace rentcarbike.Models
 
             return reviews;
         }
-        public void Insertreviews(ReviewClass review)
+        public void Insertreviews(ReviewsClass review)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
