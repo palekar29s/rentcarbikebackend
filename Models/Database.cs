@@ -155,7 +155,149 @@ namespace rentcarbike.Models
             }
         }
 
+//Booking related query 
+        public List<BookingClass> GetBookingClasses()
+        {
+            List<BookingClass> book = new List<BookingClass>();
 
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                using(SqlCommand cmd = new SqlCommand(
+                    "Select id,userid,vechileisd,startdate,enddate,tototprice,bookingstatus from booking",conn))
+                {
+                    using(SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            book.Add(new BookingClass
+                            {
+                                Id=reader.GetInt32(0),
+                                userid=reader.GetString(1),
+                                vehicleid= reader.GetString(2),
+                                startdate= reader.GetString(3),
+                                enddate= reader.GetString(4),
+                                totolprice= reader.GetString(5),
+                                bookingstatus= reader.GetString(6)
+
+
+                            });
+                        }
+                    }
+                }
+            }
+            return book;
+        }
+
+        //Payment related query 
+
+        public List<PaymentClass> getpayement()
+        {
+            List<PaymentClass> payment = new List<PaymentClass>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    "SELECT id, Name, paymentMethod, bookingid, status FROM SIGNUP", con))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            payment.Add(new PaymentClass
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                paymentMethod = reader.GetString(2),
+                                bookingid = reader.GetString(3),
+                                status = reader.GetString(4),
+                                
+                            });
+                        }
+                    }
+                }
+            }
+
+            return payment;
+        }
+        public void Insertpayment(PaymentClass vehicles)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+                string query = " INSERT INTO vehicle(id, Name, paymentMethod, bookingid, status) VALUES (@id, @Name, @paymentMethod, @bookingid, @status)";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@id", vehicles.Id);
+                    cmd.Parameters.AddWithValue("@Name", vehicles.Name);
+                    cmd.Parameters.AddWithValue("@paymentMethod", vehicles.paymentMethod);
+                    cmd.Parameters.AddWithValue("@bookingid", vehicles.bookingid);
+                    cmd.Parameters.AddWithValue("@status", vehicles.status);
+                  
+
+                }
+            }
+        }
+
+        //review related query 
+
+        public List<ReviewClass> getreview()
+        {
+            List<ReviewClass> reviews = new List<ReviewClass>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    "SELECT id, Name, Description, userid, Vehicleid, rating FROM Review", con))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            reviews.Add(new ReviewClass
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Description = reader.GetString(2),
+                                userid = reader.GetString(3),
+                                Vehicleid = reader.GetString(4),
+                                rating = reader.GetString(5),
+                                
+                            });
+                        }
+                    }
+                }
+            }
+
+            return reviews;
+        }
+        public void Insertreviews(ReviewClass review)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+                string query = " INSERT INTO vehicle(id, Name, Description, userid, Vehicleid, rating) VALUES (@id, @Name, @Description, @userid, @Vehicleid,@rating)";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@id", review.Id);
+                    cmd.Parameters.AddWithValue("@Name", review.Name);
+                    cmd.Parameters.AddWithValue("@type", review.Description);
+                    cmd.Parameters.AddWithValue("@brand", review.userid);
+                    cmd.Parameters.AddWithValue("@model", review.Vehicleid);
+                    cmd.Parameters.AddWithValue("@priceperhour", review.rating);
+                    
+                    cmd.ExecuteNonQuery();
+
+                }
+            }
+        }
+
+
+ 
 
     }
 }
