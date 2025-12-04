@@ -1,18 +1,20 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using rentcarbike.Models;
+
 
 namespace rentcarbike.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class LoginController : ControllerBase
     {
-         private readonly string _connectionString;
 
+        private readonly Database _database;
 
-        public Database(string connectionString)
+        public LoginController(Database database)
         {
-            _connectionString = connectionString;
+            _database = database;
         }
         [HttpGet("get-all-the-user-deatils")]
         public ActionResult<List<UsersClass>> GetAllSignups()
@@ -32,7 +34,7 @@ namespace rentcarbike.Controllers
         {
             try
             {
-                _database.InsertSignup(signup);
+                _database.InsertSignup(usersclass);
                 return Ok("insert the data");
             }
             catch (Exception ex)
@@ -41,34 +43,6 @@ namespace rentcarbike.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-//all endpoint of vehicle table 
-        [HttpGet("get-all-Vehicle")]
-        public ActionResult<List<VehicleClass>> GetVehicles()
-        {
-            var result = _database.GetVehicles();
-            return Ok(result);
-        }
-
-        [HttpPost("add-Vehicle")]
-        public IActionResult InsertEmployeeWithLogin([FromBody] VehicleClass vehicle)
-        {
-            if (vehicle == null)
-            {
-                return BadRequest("Employee data is required.");
-            }
-
-            try
-            {
-                _database.InsertVehicle(vehicle);
-                return Ok("Employee and login inserted successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Log exception (if logging is set up)
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
         
-    
     }
 }
