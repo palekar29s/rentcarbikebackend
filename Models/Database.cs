@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace rentcarbike.Models
 {
@@ -47,9 +48,9 @@ namespace rentcarbike.Models
             return signups;
         }
 
-        public List<UsersClass> GetAllUserPass()
+        public List<UserClass> GetAllUserPass()
         {
-            List<UsersClass> Userpass = new List<UsersClass>();
+            List<UserClass> Userpass = new List<UserClass>();
 
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
@@ -62,7 +63,7 @@ namespace rentcarbike.Models
                     {
                         while (reader.Read())
                         {
-                            Userpass.Add(new UsersClass
+                            Userpass.Add(new UserClass
                             {
                                 UserId = reader.GetInt32(0),
                                 Username = reader.GetString(1),
@@ -95,7 +96,7 @@ namespace rentcarbike.Models
                 }
             }
         }
-//vehicle related query 
+        //vehicle related query 
         public List<VehicleClass> GetVehicles()
         {
             List<VehicleClass> vehicles = new List<VehicleClass>();
@@ -104,59 +105,72 @@ namespace rentcarbike.Models
             {
                 con.Open();
 
-                using (SqlCommand cmd = new SqlCommand(
-                    "SELECT id, Name, type, brand, model, priceperhour ,priceperday ,fueltype, transmission , status FROM SIGNUP", con))
+                string query = @"
+            SELECT VehicleId, Name, Type, Brand, Model,
+                   PricePerHour, PricePerDay, FuelType,
+                   Transmission, ImageUrl, Status
+            FROM Vehicle";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        vehicles.Add(new VehicleClass
                         {
-                            vehicles.Add(new VehicleClass
-                            {
-                                Id = reader.GetInt32(0),
-                                Name = reader.GetString(1),
-                                type = reader.GetString(2),
-                                brand = reader.GetString(3),
-                                model = reader.GetString(4),
-                                priceperday = reader.GetString(5),
-                                priceperhour = reader.GetString(6),
-                                fueltype = reader.GetString(7), 
-                                transmission = reader.GetString(8),
-                                status = reader.GetString(9)
-                            });
-                        }
+                            VehicleId = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            type = reader.GetString(2),
+                            brand = reader.GetString(3),
+                            model = reader.GetString(4),
+                            priceperhour = reader.GetDecimal(5), // Correct order
+                            priceperday = reader.GetDecimal(6),  // Correct order
+                            fueltype = reader.GetString(7),
+                            transmission = reader.GetString(8),
+                          //  imageUrl = reader.GetString(9),
+                            status = reader.GetString(10)
+                        });
                     }
                 }
             }
 
             return vehicles;
         }
+
         public void InsertVehicle(VehicleClass vehicles)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
                 con.Open();
-                string query = " INSERT INTO vehicle(id, Name, type, brand, model, priceperhour ,priceperday ,fueltype, transmission , status) VALUES (@id, @Name, @type, @brand,@model, @priceperhour ,@priceperday ,@fueltype, @transmission , @status)";
+
+                string query = @"
+            INSERT INTO Vehicle
+            (Name, Type, Brand, Model, PricePerHour, PricePerDay,
+             FuelType, Transmission, ImageUrl, Status)
+            VALUES
+            (@Name, @Type, @Brand, @Model, @PricePerHour, @PricePerDay,
+             @FuelType, @Transmission, @ImageUrl, @Status)";
+
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("@id", vehicles.Id);
                     cmd.Parameters.AddWithValue("@Name", vehicles.Name);
-                    cmd.Parameters.AddWithValue("@type", vehicles.type);
-                    cmd.Parameters.AddWithValue("@brand", vehicles.brand);
-                    cmd.Parameters.AddWithValue("@model", vehicles.model);
-                    cmd.Parameters.AddWithValue("@priceperhour", vehicles.priceperhour);
-                    cmd.Parameters.AddWithValue("@priceperday", vehicles.priceperday);
-                    cmd.Parameters.AddWithValue("@fueltype", vehicles.fueltype);
-                    cmd.Parameters.AddWithValue("@transmission", vehicles.transmission);
-                    cmd.Parameters.AddWithValue("@status", vehicles.status);
-                    cmd.ExecuteNonQuery();
+                    cmd.Parameters.AddWithValue("@Type", vehicles.type);
+                    cmd.Parameters.AddWithValue("@Brand", vehicles.brand);
+                    cmd.Parameters.AddWithValue("@Model", vehicles.model);
+                    cmd.Parameters.AddWithValue("@PricePerHour", vehicles.priceperhour);
+                    cmd.Parameters.AddWithValue("@PricePerDay", vehicles.priceperday);
+                    cmd.Parameters.AddWithValue("@FuelType", vehicles.fueltype);
+                    cmd.Parameters.AddWithValue("@Transmission", vehicles.transmission);
+                    cmd.Parameters.AddWithValue("@ImageUrl", vehicles.imageUrl);
+                    cmd.Parameters.AddWithValue("@Status", vehicles.status);
 
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
 
         //Booking related query */
-          public List<BookingClass> GetBookingClasses()
+        public List<BookingClass> GetBookingClasses()
           {
               List<BookingClass> book = new List<BookingClass>();
 
@@ -188,115 +202,337 @@ namespace rentcarbike.Models
               }
               return book;
           }
-         /* 
-          //Payment related query 
+        /* 
+         //Payment related query 
 
-          public List<PaymentClass> getpayement()
-          {
-              List<PaymentClass> payment = new List<PaymentClass>();
+         public List<PaymentClass> getpayement()
+         {
+             List<PaymentClass> payment = new List<PaymentClass>();
 
-              using (SqlConnection con = new SqlConnection(_connectionString))
-              {
-                  con.Open();
+             using (SqlConnection con = new SqlConnection(_connectionString))
+             {
+                 con.Open();
 
-                  using (SqlCommand cmd = new SqlCommand(
-                      "SELECT id, Name, paymentMethod, bookingid, status FROM SIGNUP", con))
-                  {
-                      using (SqlDataReader reader = cmd.ExecuteReader())
-                      {
-                          while (reader.Read())
-                          {
-                              payment.Add(new PaymentClass
-                              {
-                                  Id = reader.GetInt32(0),
-                                  Name = reader.GetString(1),
-                                  paymentMethod = reader.GetString(2),
-                                  bookingid = reader.GetString(3),
-                                  status = reader.GetString(4),
+                 using (SqlCommand cmd = new SqlCommand(
+                     "SELECT id, Name, paymentMethod, bookingid, status FROM SIGNUP", con))
+                 {
+                     using (SqlDataReader reader = cmd.ExecuteReader())
+                     {
+                         while (reader.Read())
+                         {
+                             payment.Add(new PaymentClass
+                             {
+                                 Id = reader.GetInt32(0),
+                                 Name = reader.GetString(1),
+                                 paymentMethod = reader.GetString(2),
+                                 bookingid = reader.GetString(3),
+                                 status = reader.GetString(4),
 
-                              });
-                          }
-                      }
-                  }
-              }
+                             });
+                         }
+                     }
+                 }
+             }
 
-              return payment;
-          }
-          public void Insertpayment(PaymentClass vehicles)
-          {
-              using (SqlConnection con = new SqlConnection(_connectionString))
-              {
-                  con.Open();
-                  string query = " INSERT INTO vehicle(id, Name, paymentMethod, bookingid, status) VALUES (@id, @Name, @paymentMethod, @bookingid, @status)";
-                  using (SqlCommand cmd = new SqlCommand(query, con))
-                  {
-                      cmd.Parameters.AddWithValue("@id", vehicles.Id);
-                      cmd.Parameters.AddWithValue("@Name", vehicles.Name);
-                      cmd.Parameters.AddWithValue("@paymentMethod", vehicles.paymentMethod);
-                      cmd.Parameters.AddWithValue("@bookingid", vehicles.bookingid);
-                      cmd.Parameters.AddWithValue("@status", vehicles.status);
+             return payment;
+         }
+         public void Insertpayment(PaymentClass vehicles)
+         {
+             using (SqlConnection con = new SqlConnection(_connectionString))
+             {
+                 con.Open();
+                 string query = " INSERT INTO vehicle(id, Name, paymentMethod, bookingid, status) VALUES (@id, @Name, @paymentMethod, @bookingid, @status)";
+                 using (SqlCommand cmd = new SqlCommand(query, con))
+                 {
+                     cmd.Parameters.AddWithValue("@id", vehicles.Id);
+                     cmd.Parameters.AddWithValue("@Name", vehicles.Name);
+                     cmd.Parameters.AddWithValue("@paymentMethod", vehicles.paymentMethod);
+                     cmd.Parameters.AddWithValue("@bookingid", vehicles.bookingid);
+                     cmd.Parameters.AddWithValue("@status", vehicles.status);
 
 
-                  }
-              }
-          }
+                 }
+             }
+         }
 
-          //review related query 
+         
 
-          public List<ReviewsClass> getreview()
-          {
-              List<ReviewsClass> reviews = new List<ReviewsClass>();
+         */
 
-              using (SqlConnection con = new SqlConnection(_connectionString))
-              {
-                  con.Open();
+        //the code related to reviews
+        public List<ReviewsClass> GetReviews()
+        {
+            List<ReviewsClass> reviews = new List<ReviewsClass>();
 
-                  using (SqlCommand cmd = new SqlCommand(
-                      "SELECT id, Name, Description, userid, Vehicleid, rating FROM Review", con))
-                  {
-                      using (SqlDataReader reader = cmd.ExecuteReader())
-                      {
-                          while (reader.Read())
-                          {
-                              reviews.Add(new ReviewsClass
-                              {
-                                  Id = reader.GetInt32(0),
-                                  Name = reader.GetString(1),
-                                  Description = reader.GetString(2),
-                                  userid = reader.GetString(3),
-                                  Vehicleid = reader.GetString(4),
-                                  rating = reader.GetString(5),
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
 
-                              });
-                          }
-                      }
-                  }
-              }
+                string query = @"SELECT ReviewId, UserId, VehicleId, Rating, Comment, CreatedAt 
+                         FROM Reviews";
 
-              return reviews;
-          }
-          public void Insertreviews(ReviewsClass review)
-          {
-              using (SqlConnection con = new SqlConnection(_connectionString))
-              {
-                  con.Open();
-                  string query = " INSERT INTO vehicle(id, Name, Description, userid, Vehicleid, rating) VALUES (@id, @Name, @Description, @userid, @Vehicleid,@rating)";
-                  using (SqlCommand cmd = new SqlCommand(query, con))
-                  {
-                      cmd.Parameters.AddWithValue("@id", review.Id);
-                      cmd.Parameters.AddWithValue("@Name", review.Name);
-                      cmd.Parameters.AddWithValue("@type", review.Description);
-                      cmd.Parameters.AddWithValue("@brand", review.userid);
-                      cmd.Parameters.AddWithValue("@model", review.Vehicleid);
-                      cmd.Parameters.AddWithValue("@priceperhour", review.rating);
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        reviews.Add(new ReviewsClass
+                        {
+                            ReviewId = reader.GetInt32(0),
+                            UserId = reader.GetInt32(1),
+                            VehicleId = reader.GetInt32(2),
+                            Rating = reader.GetInt32(3),
+                            Comment = reader.GetString(4),
+                            CreatedAt = reader.GetDateTime(5)
+                        });
+                    }
+                }
+            }
 
-                      cmd.ExecuteNonQuery();
+            return reviews;
+        }
+        public void InsertReview(ReviewsClass review)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
 
-                  }
-              }
-          }
+                string query = @"INSERT INTO Reviews 
+                        (UserId, VehicleId, Rating, Comment, CreatedAt)
+                         VALUES 
+                        (@UserId, @VehicleId, @Rating, @Comment, @CreatedAt)";
 
-          */
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", review.UserId);
+                    cmd.Parameters.AddWithValue("@VehicleId", review.VehicleId);
+                    cmd.Parameters.AddWithValue("@Rating", review.Rating);
+                    cmd.Parameters.AddWithValue("@Comment", review.Comment);
+                    cmd.Parameters.AddWithValue("@CreatedAt", review.CreatedAt);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+
+        //the query related to images vehicle 
+        //this query related to images 
+        public List<VehicleImagesClass> GetImages()
+        {
+            var images = new List<VehicleImagesClass>();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = "SELECT * FROM VehicleImages";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var image = new VehicleImagesClass
+                        {
+                            ImageId = Convert.ToInt32(reader["ImageId"]),
+                            VehicleId = Convert.ToInt32(reader["VehicleId"]),
+                            ImageUrl = reader["ImageUrl"] as string,
+                            VehicleName = reader["VehicleName"].ToString()
+                        };
+
+                        images.Add(image); // <-- you forgot this
+                    }
+                }
+            }
+
+            return images;
+        }
+
+        public void InsertVehicleImage(VehicleImagesClass image)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = @"INSERT INTO VehicleImages (VehicleId, ImageUrl, VehicleName)
+                         VALUES (@VehicleId, @ImageUrl, @VehicleName)";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@VehicleId", image.VehicleId);
+                    cmd.Parameters.AddWithValue("@ImageUrl", image.ImageUrl); // byte[]
+                    cmd.Parameters.AddWithValue("@VehicleName", image.VehicleName);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+       
+        public List<VehicleImagesClass> GetVehicleImagesById(int vehicleId)
+        {
+            var images = new List<VehicleImagesClass>();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (SqlCommand cmd = new SqlCommand("GetVehicleImagesByIdd", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@VehicleId", vehicleId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            images.Add(new VehicleImagesClass
+                            {
+                                ImageId = Convert.ToInt32(reader["ImageId"]),
+                                VehicleId = Convert.ToInt32(reader["VehicleId"]),
+                                ImageUrl = reader["ImageUrl"] as string,
+                                VehicleName = reader["VehicleName"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            return images;
+        }
+
+        public List<VehicleClass> GetVehiclesWithImages()
+        {
+            var vehicles = new List<VehicleClass>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = @"
+            SELECT 
+                v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
+                v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
+                v.ImageUrl, v.Status,
+                vi.ImageId, vi.ImageUrl AS VehicleImage, vi.VehicleName
+            FROM Vehicle v
+            LEFT JOIN VehicleImages vi
+                ON v.VehicleId = vi.VehicleId
+            ORDER BY v.VehicleId";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int vehId = Convert.ToInt32(reader["VehicleId"]);
+
+                        // Does this vehicle already exist in the list?
+                        var vehicle = vehicles.FirstOrDefault(v => v.VehicleId == vehId);
+
+                        if (vehicle == null)
+                        {
+                            vehicle = new VehicleClass
+                            {
+                                VehicleId = vehId,
+                                Name = reader["Name"].ToString(),
+                                type = reader["Type"].ToString(),
+                                brand = reader["Brand"].ToString(),
+                                model = reader["Model"].ToString(),
+                                priceperhour = Convert.ToDecimal(reader["PricePerHour"]),
+                                priceperday = Convert.ToDecimal(reader["PricePerDay"]),
+                                fueltype = reader["FuelType"].ToString(),
+                                transmission = reader["Transmission"].ToString(),
+                                imageUrl = reader["ImageUrl"].ToString(),
+                                status = reader["Status"].ToString(),
+                                Images = new List<VehicleImagesClass>()   // Initialize list
+                            };
+
+                            vehicles.Add(vehicle);
+                        }
+
+                        // Add image if exists
+                        if (reader["VehicleImage"] != DBNull.Value)
+                        {
+                            vehicle.Images.Add(new VehicleImagesClass
+                            {
+                                ImageId = Convert.ToInt32(reader["ImageId"]),
+                                VehicleId = vehId,
+                                ImageUrl = reader["VehicleImage"].ToString(),
+                                VehicleName = reader["VehicleName"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            return vehicles;
+        }
+
+
+        public VehicleClass GetVehicleById(int vehicleId)
+        {
+            VehicleClass vehicle = null;
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = @"
+        SELECT 
+            v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
+            v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
+            v.ImageUrl AS DefaultImage, v.Status,
+            vi.ImageId,
+            vi.ImageUrl AS VehicleImage,
+            vi.VehicleName
+        FROM Vehicle v
+        LEFT JOIN VehicleImages vi ON v.VehicleId = vi.VehicleId
+        WHERE v.VehicleId = @VehicleId
+        ORDER BY vi.ImageId";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@VehicleId", vehicleId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            if (vehicle == null)
+                            {
+                                vehicle = new VehicleClass
+                                {
+                                    VehicleId = Convert.ToInt32(reader["VehicleId"]),
+                                    Name = reader["Name"].ToString(),
+                                    type = reader["Type"].ToString(),
+                                    brand = reader["Brand"].ToString(),
+                                    model = reader["Model"].ToString(),
+                                    priceperhour = Convert.ToDecimal(reader["PricePerHour"]),
+                                    priceperday = Convert.ToDecimal(reader["PricePerDay"]),
+                                    fueltype = reader["FuelType"].ToString(),
+                                    transmission = reader["Transmission"].ToString(),
+                                    imageUrl = reader["DefaultImage"].ToString(),
+                                    status = reader["Status"].ToString(),
+                                    Images = new List<VehicleImagesClass>()
+                                };
+                            }
+
+                            // Add normal URL (varchar)
+                            if (reader["VehicleImage"] != DBNull.Value)
+                            {
+                                vehicle.Images.Add(new VehicleImagesClass
+                                {
+                                    ImageId = reader["ImageId"] != DBNull.Value ? Convert.ToInt32(reader["ImageId"]) : 0,
+                                    VehicleId = vehicleId,
+                                    ImageUrl = reader["VehicleImage"].ToString(),
+                                    VehicleName = reader["VehicleName"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return vehicle;
+        }
 
 
     }

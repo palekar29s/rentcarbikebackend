@@ -19,15 +19,20 @@ namespace rentcarbike
 
             builder.Services.AddSingleton(new Database(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-    
+
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll",
-                    policy => policy.AllowAnyOrigin()
-                                    .AllowAnyMethod()
-                                    .AllowAnyHeader());
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
             });
+
 
             var app = builder.Build();
 
@@ -39,6 +44,7 @@ namespace rentcarbike
             }
 
             app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
 
             app.UseAuthorization();
 

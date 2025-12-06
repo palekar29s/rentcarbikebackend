@@ -41,5 +41,67 @@ namespace rentcarbike.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        [HttpGet("gets-the-images")]
+        public IActionResult GetAllImages()
+        {
+            var images = _database.GetImages();
+            return Ok(images);
+        }
+
+
+        // ------------------------------------------------------
+        [HttpPost("insert-the-images")]
+        public IActionResult InsertImage([FromBody] VehicleImagesClass image)
+        {
+            if (image == null)
+                return BadRequest("Image data is required.");
+
+            _database.InsertVehicleImage(image);
+            return Ok("Image inserted successfully.");
+        }
+
+        
+
+        [HttpGet("{vehicleId}")]
+        public IActionResult GetImagesByVehicleId(int vehicleId)
+        {
+            if (vehicleId <= 0)
+                return BadRequest("Invalid VehicleId");
+
+            List<VehicleImagesClass> images = _database.GetVehicleImagesById(vehicleId);
+
+            return Ok(images);
+        }
+
+        [HttpGet("getvehicleswithimages")]
+        public IActionResult GetVehiclesWithImages()
+        {
+            try
+            {
+                var vehicles = _database.GetVehiclesWithImages();
+
+                if (vehicles == null || vehicles.Count == 0)
+                {
+                    return NotFound(new { message = "No vehicles found" });
+                }
+
+                return Ok(vehicles);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Server error", error = ex.Message });
+            }
+        }
+        [HttpGet("GetVehicleById/{id}")]
+        public IActionResult GetVehicleById(int id)
+        {
+            var result = _database.GetVehicleById(id);
+            if (result == null)
+                return NotFound("Vehicle not found");
+
+            return Ok(result);
+        }
+
     }
 }
