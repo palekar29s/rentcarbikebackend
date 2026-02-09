@@ -78,6 +78,30 @@ namespace rentcarbike.Models
             return Userpass;
         }
 
+
+        // ts is the code related to register 
+        public int InsertUser(UsersClass user)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                string query = @"INSERT INTO Users 
+                        (Username, PasswordHash, FullName, Email, Phone)
+                        VALUES 
+                        (@Username, @PasswordHash, @FullName, @Email, @Phone)";
+
+                SqlCommand cmd = new SqlCommand(query, con);
+
+                cmd.Parameters.AddWithValue("@Username", user.Username);
+                cmd.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
+                cmd.Parameters.AddWithValue("@FullName", user.FullName);
+                cmd.Parameters.AddWithValue("@Email", user.Email);
+                cmd.Parameters.AddWithValue("@Phone", user.Phone);
+
+                con.Open();
+                return cmd.ExecuteNonQuery();
+            }
+        }
+
         public void InsertSignup(UsersClass UsersClass)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
@@ -97,45 +121,7 @@ namespace rentcarbike.Models
             }
         }
         //vehicle related query 
-        public List<VehicleClass> GetVehicles()
-        {
-            List<VehicleClass> vehicles = new List<VehicleClass>();
-
-            using (SqlConnection con = new SqlConnection(_connectionString))
-            {
-                con.Open();
-
-                string query = @"
-            SELECT VehicleId, Name, Type, Brand, Model,
-                   PricePerHour, PricePerDay, FuelType,
-                   Transmission, ImageUrl, Status
-            FROM Vehicle";
-
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        vehicles.Add(new VehicleClass
-                        {
-                            VehicleId = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            type = reader.GetString(2),
-                            brand = reader.GetString(3),
-                            model = reader.GetString(4),
-                            priceperhour = reader.GetDecimal(5), // Correct order
-                            priceperday = reader.GetDecimal(6),  // Correct order
-                            fueltype = reader.GetString(7),
-                            transmission = reader.GetString(8),
-                          //  imageUrl = reader.GetString(9),
-                            status = reader.GetString(10)
-                        });
-                    }
-                }
-            }
-
-            return vehicles;
-        }
+       
 
         public void InsertVehicle(VehicleClass vehicles)
         {
@@ -171,39 +157,144 @@ namespace rentcarbike.Models
 
         //Booking related query */
         public List<BookingClass> GetBookingClasses()
-          {
-              List<BookingClass> book = new List<BookingClass>();
+        {
+            List<BookingClass> bookings = new List<BookingClass>();
 
-              using (SqlConnection conn = new SqlConnection(_connectionString))
-              {
-                  conn.Open();
-                  using(SqlCommand cmd = new SqlCommand(
-                      "Select BookingId,userid,vechileisd,startdate,enddate,tototprice,bookingstatus from Booking", conn))
-                  {
-                      using(SqlDataReader reader = cmd.ExecuteReader())
-                      {
-                          while (reader.Read())
-                          {
-                              book.Add(new BookingClass
-                              {
-                                  BookingId = reader.GetInt32(0),
-                                  userid=reader.GetString(1),
-                                  vehicleid= reader.GetString(2),
-                                  startdate= reader.GetString(3),
-                                  enddate= reader.GetString(4),
-                                  totolprice= reader.GetString(5),
-                                  bookingstatus= reader.GetString(6)
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    @"SELECT 
+                BookingId,
+                UserId,
+                VehicleId,
+                StartDate,
+                EndDate,
+                TotalPrice,
+                BookingStatus
+              FROM Booking", conn))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            bookings.Add(new BookingClass
+                            {
+                                BookingId = reader.GetInt32(0),
+                                UserId = reader.GetInt32(1),
+                                VehicleId = reader.GetInt32(2),
+                                StartDate = reader.GetDateTime(3),
+                                EndDate = reader.GetDateTime(4),
+                                TotalPrice = reader.GetDecimal(5),
+                                BookingStatus = reader.GetString(6)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return bookings;
+        }
 
 
-                              });
-                          }
-                      }
-                  }
-              }
-              return book;
-          }
+        public int AddBooking(BookingClass booking)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    @"INSERT INTO Booking
+              (UserId, VehicleId, StartDate, EndDate, TotalPrice, BookingStatus)
+              OUTPUT INSERTED.BookingId
+              VALUES
+              (@UserId, @VehicleId, @StartDate, @EndDate, @TotalPrice, @BookingStatus)", conn))
+                {
+                    cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = booking.UserId;
+                    cmd.Parameters.Add("@VehicleId", SqlDbType.Int).Value = booking.VehicleId;
+                    cmd.Parameters.Add("@StartDate", SqlDbType.DateTime).Value = booking.StartDate;
+                    cmd.Parameters.Add("@EndDate", SqlDbType.DateTime).Value = booking.EndDate;
+                    cmd.Parameters.Add("@TotalPrice", SqlDbType.Decimal).Value = booking.TotalPrice;
+                    cmd.Parameters.Add("@BookingStatus", SqlDbType.VarChar, 50).Value = booking.BookingStatus;
+
+                    return (int)cmd.ExecuteScalar(); // returns new BookingId
+                }
+            }
+        }
+
+        public bool UpdateBookingStatus(int bookingId, string status)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                    @"UPDATE Booking 
+              SET BookingStatus = @BookingStatus
+              WHERE BookingId = @BookingId", conn))
+                {
+                    cmd.Parameters.Add("@BookingStatus", SqlDbType.VarChar, 50).Value = status;
+                    cmd.Parameters.Add("@BookingId", SqlDbType.Int).Value = bookingId;
+
+                    int rows = cmd.ExecuteNonQuery();
+                    return rows > 0;
+                }
+            }
+        }
+
+        public List<BookingHistoryDto> GetBookingsByUserId(int userId)
+        {
+            List<BookingHistoryDto> list = new();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = new SqlCommand(
+                @"SELECT 
+            b.BookingId,
+            b.UserId,
+            u.Username,
+            b.VehicleId,
+            b.StartDate,
+            b.EndDate,
+            b.TotalPrice,
+            b.BookingStatus
+          FROM Booking b
+          INNER JOIN Users u ON b.UserId = u.UserId
+          WHERE b.UserId = @UserId
+          ORDER BY b.BookingId DESC", conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new BookingHistoryDto
+                            {
+                                BookingId = reader.GetInt32(0),
+                                UserId = reader.GetInt32(1),
+                                Username = reader.GetString(2),
+                                VehicleId = reader.GetInt32(3),
+                                StartDate = reader.GetDateTime(4),
+                                EndDate = reader.GetDateTime(5),
+                                TotalPrice = reader.GetDecimal(6),
+                                BookingStatus = reader.GetString(7)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
+
+
         /* 
-         //Payment related query 
+         //Payment related qMicrosoft.Data.SqlClient.SqlException: 'The INSERT uery 
 
          public List<PaymentClass> getpayement()
          {
@@ -318,35 +409,7 @@ namespace rentcarbike.Models
 
         //the query related to images vehicle 
         //this query related to images 
-        public List<VehicleImagesClass> GetImages()
-        {
-            var images = new List<VehicleImagesClass>();
-
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string query = "SELECT * FROM VehicleImages";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var image = new VehicleImagesClass
-                        {
-                            ImageId = Convert.ToInt32(reader["ImageId"]),
-                            VehicleId = Convert.ToInt32(reader["VehicleId"]),
-                            ImageUrl = reader["ImageUrl"] as string,
-                            VehicleName = reader["VehicleName"].ToString()
-                        };
-
-                        images.Add(image); // <-- you forgot this
-                    }
-                }
-            }
-
-            return images;
-        }
+       
 
         public void InsertVehicleImage(VehicleImagesClass image)
         {
@@ -367,106 +430,9 @@ namespace rentcarbike.Models
             }
         }
        
-        public List<VehicleImagesClass> GetVehicleImagesById(int vehicleId)
-        {
-            var images = new List<VehicleImagesClass>();
+       
 
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand("GetVehicleImagesByIdd", conn))
-                {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@VehicleId", vehicleId);
-
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            images.Add(new VehicleImagesClass
-                            {
-                                ImageId = Convert.ToInt32(reader["ImageId"]),
-                                VehicleId = Convert.ToInt32(reader["VehicleId"]),
-                                ImageUrl = reader["ImageUrl"] as string,
-                                VehicleName = reader["VehicleName"].ToString()
-                            });
-                        }
-                    }
-                }
-            }
-
-            return images;
-        }
-
-        public List<VehicleClass> GetVehiclesWithImages()
-        {
-            var vehicles = new List<VehicleClass>();
-
-            using (SqlConnection con = new SqlConnection(_connectionString))
-            {
-                con.Open();
-
-                string query = @"
-            SELECT 
-                v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
-                v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
-                v.ImageUrl, v.Status,
-                vi.ImageId, vi.ImageUrl AS VehicleImage, vi.VehicleName
-            FROM Vehicle v
-            LEFT JOIN VehicleImages vi
-                ON v.VehicleId = vi.VehicleId
-            ORDER BY v.VehicleId";
-
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        int vehId = Convert.ToInt32(reader["VehicleId"]);
-
-                        // Does this vehicle already exist in the list?
-                        var vehicle = vehicles.FirstOrDefault(v => v.VehicleId == vehId);
-
-                        if (vehicle == null)
-                        {
-                            vehicle = new VehicleClass
-                            {
-                                VehicleId = vehId,
-                                Name = reader["Name"].ToString(),
-                                type = reader["Type"].ToString(),
-                                brand = reader["Brand"].ToString(),
-                                model = reader["Model"].ToString(),
-                                priceperhour = Convert.ToDecimal(reader["PricePerHour"]),
-                                priceperday = Convert.ToDecimal(reader["PricePerDay"]),
-                                fueltype = reader["FuelType"].ToString(),
-                                transmission = reader["Transmission"].ToString(),
-                                imageUrl = reader["ImageUrl"].ToString(),
-                                status = reader["Status"].ToString(),
-                                Images = new List<VehicleImagesClass>()   // Initialize list
-                            };
-
-                            vehicles.Add(vehicle);
-                        }
-
-                        // Add image if exists
-                        if (reader["VehicleImage"] != DBNull.Value)
-                        {
-                            vehicle.Images.Add(new VehicleImagesClass
-                            {
-                                ImageId = Convert.ToInt32(reader["ImageId"]),
-                                VehicleId = vehId,
-                                ImageUrl = reader["VehicleImage"].ToString(),
-                                VehicleName = reader["VehicleName"].ToString()
-                            });
-                        }
-                    }
-                }
-            }
-
-            return vehicles;
-        }
-
-
+        //this is use in the get partiuclar vechile in detail 
         public VehicleClass GetVehicleById(int vehicleId)
         {
             VehicleClass vehicle = null;
@@ -476,17 +442,18 @@ namespace rentcarbike.Models
                 con.Open();
 
                 string query = @"
-        SELECT 
-            v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
-            v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
-            v.ImageUrl AS DefaultImage, v.Status,
-            vi.ImageId,
-            vi.ImageUrl AS VehicleImage,
-            vi.VehicleName
-        FROM Vehicle v
-        LEFT JOIN VehicleImages vi ON v.VehicleId = vi.VehicleId
-        WHERE v.VehicleId = @VehicleId
-        ORDER BY vi.ImageId";
+SELECT 
+    v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
+    v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
+    v.ImageUrl AS DefaultImage, v.Status,
+    v.StartDate, v.EndDate, v.Location, v.Seats,
+    vi.ImageId,
+    vi.ImageUrl AS VehicleImage,
+    vi.VehicleName
+FROM Vehicle v
+LEFT JOIN VehicleImages vi ON v.VehicleId = vi.VehicleId
+WHERE v.VehicleId = @VehicleId
+ORDER BY vi.ImageId";
 
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
@@ -511,11 +478,18 @@ namespace rentcarbike.Models
                                     transmission = reader["Transmission"].ToString(),
                                     imageUrl = reader["DefaultImage"].ToString(),
                                     status = reader["Status"].ToString(),
+
+                                    // NEW FIELDS
+                                    StartDate = reader["StartDate"] != DBNull.Value ? Convert.ToDateTime(reader["StartDate"]) : (DateTime?)null,
+                                    EndDate = reader["EndDate"] != DBNull.Value ? Convert.ToDateTime(reader["EndDate"]) : (DateTime?)null,
+                                    Location = reader["Location"].ToString(),
+                                    Seats = reader["Seats"] != DBNull.Value ? (int?)Convert.ToInt32(reader["Seats"]) : null,
+
                                     Images = new List<VehicleImagesClass>()
                                 };
                             }
 
-                            // Add normal URL (varchar)
+                            // Add vehicle images
                             if (reader["VehicleImage"] != DBNull.Value)
                             {
                                 vehicle.Images.Add(new VehicleImagesClass
@@ -532,6 +506,120 @@ namespace rentcarbike.Models
             }
 
             return vehicle;
+        }
+       
+        // this is the filter in the search section it is use 
+       
+        public List<VehicleClass> GetVehiclesWithImagess(
+    string vehicle = null,
+    DateTime? checkin = null,
+    DateTime? checkout = null,
+    string location = null,
+    int? seats = null)
+        {
+            var vehicles = new List<VehicleClass>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = @"
+        SELECT 
+            v.VehicleId, v.Name, v.Type, v.Brand, v.Model,
+            v.PricePerHour, v.PricePerDay, v.FuelType, v.Transmission,
+            v.ImageUrl, v.Status,
+            v.StartDate, v.EndDate, v.Location, v.Seats,
+            vi.ImageId, vi.ImageUrl AS VehicleImage, vi.VehicleName
+        FROM Vehicle v
+        LEFT JOIN VehicleImages vi
+            ON v.VehicleId = vi.VehicleId
+        WHERE 
+            (@vehicle IS NULL OR v.Type = @vehicle)
+            AND (@location IS NULL OR v.Location = @location)
+            AND (@seats IS NULL OR v.Seats = @seats OR v.Seats IS NULL)
+            AND (
+                @checkin IS NULL OR 
+                @checkout IS NULL OR
+                (v.StartDate <= @checkin AND v.EndDate >= @checkout)
+            )
+        ORDER BY v.VehicleId";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.Add("@vehicle", SqlDbType.VarChar).Value =
+                        (object)vehicle ?? DBNull.Value;
+
+                    cmd.Parameters.Add("@location", SqlDbType.VarChar).Value =
+                        (object)location ?? DBNull.Value;
+
+                    cmd.Parameters.Add("@seats", SqlDbType.Int).Value =
+                        (object)seats ?? DBNull.Value;
+
+                    cmd.Parameters.Add("@checkin", SqlDbType.DateTime).Value =
+                        (object)checkin ?? DBNull.Value;
+
+                    cmd.Parameters.Add("@checkout", SqlDbType.DateTime).Value =
+                        (object)checkout ?? DBNull.Value;
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int vehId = Convert.ToInt32(reader["VehicleId"]);
+
+                            var vehicleObj = vehicles.FirstOrDefault(v => v.VehicleId == vehId);
+
+                            if (vehicleObj == null)
+                            {
+                                vehicleObj = new VehicleClass
+                                {
+                                    VehicleId = vehId,
+                                    Name = reader["Name"].ToString(),
+                                    type = reader["Type"].ToString(),
+                                    brand = reader["Brand"].ToString(),
+                                    model = reader["Model"].ToString(),
+                                    priceperhour = Convert.ToDecimal(reader["PricePerHour"]),
+                                    priceperday = Convert.ToDecimal(reader["PricePerDay"]),
+                                    fueltype = reader["FuelType"].ToString(),
+                                    transmission = reader["Transmission"].ToString(),
+                                    imageUrl = reader["ImageUrl"].ToString(),
+                                    status = reader["Status"].ToString(),
+
+                                    StartDate = reader["StartDate"] == DBNull.Value
+                                        ? null
+                                        : Convert.ToDateTime(reader["StartDate"]),
+
+                                    EndDate = reader["EndDate"] == DBNull.Value
+                                        ? null
+                                        : Convert.ToDateTime(reader["EndDate"]),
+
+                                    Location = reader["Location"].ToString(),
+                                    Seats = reader["Seats"] == DBNull.Value
+                                        ? (int?)null
+                                        : Convert.ToInt32(reader["Seats"]),
+
+                                    Images = new List<VehicleImagesClass>()
+                                };
+
+                                vehicles.Add(vehicleObj);
+                            }
+
+                            if (reader["VehicleImage"] != DBNull.Value)
+                            {
+                                vehicleObj.Images.Add(new VehicleImagesClass
+                                {
+                                    ImageId = Convert.ToInt32(reader["ImageId"]),
+                                    VehicleId = vehId,
+                                    ImageUrl = reader["VehicleImage"].ToString(),
+                                    VehicleName = reader["VehicleName"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return vehicles;
         }
 
 

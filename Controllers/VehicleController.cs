@@ -15,12 +15,7 @@ namespace rentcarbike.Controllers
         }
 
         //all endpoint of vehicle table 
-        [HttpGet("get-all-Vehicle")]
-        public ActionResult<List<VehicleClass>> GetVehicles()
-        {
-            var result = _database.GetVehicles();
-            return Ok(result);
-        }
+       
 
         [HttpPost("add-Vehicle")]
         public IActionResult InsertEmployeeWithLogin([FromBody] VehicleClass vehicle)
@@ -42,12 +37,7 @@ namespace rentcarbike.Controllers
             }
         }
 
-        [HttpGet("gets-the-images")]
-        public IActionResult GetAllImages()
-        {
-            var images = _database.GetImages();
-            return Ok(images);
-        }
+        
 
 
         // ------------------------------------------------------
@@ -63,42 +53,37 @@ namespace rentcarbike.Controllers
 
         
 
-        [HttpGet("{vehicleId}")]
-        public IActionResult GetImagesByVehicleId(int vehicleId)
-        {
-            if (vehicleId <= 0)
-                return BadRequest("Invalid VehicleId");
+       
+       
 
-            List<VehicleImagesClass> images = _database.GetVehicleImagesById(vehicleId);
-
-            return Ok(images);
-        }
-
-        [HttpGet("getvehicleswithimages")]
-        public IActionResult GetVehiclesWithImages()
-        {
-            try
-            {
-                var vehicles = _database.GetVehiclesWithImages();
-
-                if (vehicles == null || vehicles.Count == 0)
-                {
-                    return NotFound(new { message = "No vehicles found" });
-                }
-
-                return Ok(vehicles);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Server error", error = ex.Message });
-            }
-        }
+        //this is use in the get partiuclar vechile in detail 
         [HttpGet("GetVehicleById/{id}")]
         public IActionResult GetVehicleById(int id)
         {
             var result = _database.GetVehicleById(id);
             if (result == null)
                 return NotFound("Vehicle not found");
+
+            return Ok(result);
+        }
+
+        // this is the filter in the search section it is use 
+
+        [HttpGet("getvehicleswithimagess")]
+        public IActionResult GetVehiclesWithImagess(
+    string? vehicle,
+    DateTime? checkin,
+    DateTime? checkout,
+    string? location,
+    int? seats)
+        {
+            var result = _database.GetVehiclesWithImagess(
+                vehicle,
+                checkin,
+                checkout,
+                location,
+                seats
+            );
 
             return Ok(result);
         }

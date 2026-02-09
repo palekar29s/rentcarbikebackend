@@ -43,6 +43,18 @@ namespace rentcarbike.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        
+        [HttpPost]
+        public IActionResult InsertUser([FromBody] UsersClass user)
+        {
+            if (user == null)
+                return BadRequest("Invalid data");
+
+            int result = _database.InsertUser(user);
+
+            if (result > 0)
+                return Ok("User inserted successfully");
+            else
+                return StatusCode(500, "Error inserting user");
+        }
     }
 }
