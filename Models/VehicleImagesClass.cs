@@ -7,9 +7,8 @@ namespace rentcarbike.Models
          public int ImageId { get; set; }
     public int VehicleId { get; set; }
 
-    // VARBINARY → byte[]
-    public byte[] ImageUrl { get; set; }
+        public string ImageUrl { get; set; }
 
-    public string VehicleName { get; set; }
+        public string VehicleName { get; set; }
     }
 }
