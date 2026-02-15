@@ -88,5 +88,18 @@ namespace rentcarbike.Controllers
             return Ok(result);
         }
 
+        //this for the update of unavlbel
+        // ------------------------------------------------------
+        [HttpPut("set-unavailable/{vehicleId}")]
+        public IActionResult SetVehicleUnavailable(int vehicleId)
+        {
+            if (vehicleId <= 0)
+                return BadRequest("Invalid Vehicle Id.");
+
+            _database.UpdateVehicleStatus(vehicleId);
+
+            return Ok("Vehicle status updated to Unavailable successfully.");
+        }
+
     }
 }

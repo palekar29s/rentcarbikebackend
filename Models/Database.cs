@@ -121,7 +121,7 @@ namespace rentcarbike.Models
             }
         }
         //vehicle related query 
-       
+
 
         public void InsertVehicle(VehicleClass vehicles)
         {
@@ -149,6 +149,26 @@ namespace rentcarbike.Models
                     cmd.Parameters.AddWithValue("@Transmission", vehicles.transmission);
                     cmd.Parameters.AddWithValue("@ImageUrl", vehicles.imageUrl);
                     cmd.Parameters.AddWithValue("@Status", vehicles.status);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+
+
+        public void UpdateVehicleStatus(int vehicleId)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = "UPDATE Vehicle SET Status = @Status WHERE VehicleId = @VehicleId";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@Status", "Unavailable");
+                    cmd.Parameters.AddWithValue("@VehicleId", vehicleId);
 
                     cmd.ExecuteNonQuery();
                 }
