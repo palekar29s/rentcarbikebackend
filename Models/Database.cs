@@ -4,7 +4,7 @@ using System.Data;
 
 namespace rentcarbike.Models
 {
-    public class Database: DbContext
+    public class Database : DbContext
     {
 
         private readonly string _connectionString;
@@ -123,40 +123,122 @@ namespace rentcarbike.Models
         //vehicle related query 
 
 
-        public void InsertVehicle(VehicleClass vehicles)
+        //public void InsertVehicle(VehicleClass vehicles)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_connectionString))
+        //    {
+        //        con.Open();
+
+        //        string query = @"
+        //    INSERT INTO Vehicle
+        //    (Name, Type, Brand, Model, PricePerHour, PricePerDay,
+        //     FuelType, Transmission, ImageUrl, Status)
+        //    VALUES
+        //    (@Name, @Type, @Brand, @Model, @PricePerHour, @PricePerDay,
+        //     @FuelType, @Transmission, @ImageUrl, @Status)";
+
+        //        using (SqlCommand cmd = new SqlCommand(query, con))
+        //        {
+        //            cmd.Parameters.AddWithValue("@Name", vehicles.Name);
+        //            cmd.Parameters.AddWithValue("@Type", vehicles.type);
+        //            cmd.Parameters.AddWithValue("@Brand", vehicles.brand);
+        //            cmd.Parameters.AddWithValue("@Model", vehicles.model);
+        //            cmd.Parameters.AddWithValue("@PricePerHour", vehicles.priceperhour);
+        //            cmd.Parameters.AddWithValue("@PricePerDay", vehicles.priceperday);
+        //            cmd.Parameters.AddWithValue("@FuelType", vehicles.fueltype);
+        //            cmd.Parameters.AddWithValue("@Transmission", vehicles.transmission);
+        //            cmd.Parameters.AddWithValue("@ImageUrl", vehicles.imageUrl);
+        //            cmd.Parameters.AddWithValue("@Status", vehicles.status);
+
+        //            cmd.ExecuteNonQuery();
+        //        }
+        //    }
+        //}
+
+        public async Task<int> InsertVehicle(vehicleeClass vehicle)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
-                con.Open();
+                await con.OpenAsync();
 
                 string query = @"
-            INSERT INTO Vehicle
-            (Name, Type, Brand, Model, PricePerHour, PricePerDay,
-             FuelType, Transmission, ImageUrl, Status)
-            VALUES
-            (@Name, @Type, @Brand, @Model, @PricePerHour, @PricePerDay,
-             @FuelType, @Transmission, @ImageUrl, @Status)";
+        INSERT INTO Vehicle
+        (Name, Type, Brand, Model, PricePerHour, PricePerDay,
+         FuelType, Transmission, Status, StartDate, EndDate, Location, Seats)
+        OUTPUT INSERTED.VehicleId
+        VALUES
+        (@Name, @Type, @Brand, @Model, @PricePerHour, @PricePerDay,
+         @FuelType, @Transmission, @Status, @StartDate, @EndDate, @Location, @Seats)";
 
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("@Name", vehicles.Name);
-                    cmd.Parameters.AddWithValue("@Type", vehicles.type);
-                    cmd.Parameters.AddWithValue("@Brand", vehicles.brand);
-                    cmd.Parameters.AddWithValue("@Model", vehicles.model);
-                    cmd.Parameters.AddWithValue("@PricePerHour", vehicles.priceperhour);
-                    cmd.Parameters.AddWithValue("@PricePerDay", vehicles.priceperday);
-                    cmd.Parameters.AddWithValue("@FuelType", vehicles.fueltype);
-                    cmd.Parameters.AddWithValue("@Transmission", vehicles.transmission);
-                    cmd.Parameters.AddWithValue("@ImageUrl", vehicles.imageUrl);
-                    cmd.Parameters.AddWithValue("@Status", vehicles.status);
+                    cmd.Parameters.AddWithValue("@Name", vehicle.Name);
+                    cmd.Parameters.AddWithValue("@Type", vehicle.type);
+                    cmd.Parameters.AddWithValue("@Brand", vehicle.brand);
+                    cmd.Parameters.AddWithValue("@Model", vehicle.model);
+                    cmd.Parameters.AddWithValue("@PricePerHour", vehicle.priceperhour);
+                    cmd.Parameters.AddWithValue("@PricePerDay", vehicle.priceperday);
+                    cmd.Parameters.AddWithValue("@FuelType", vehicle.fueltype);
+                    cmd.Parameters.AddWithValue("@Transmission", vehicle.transmission);
+                    cmd.Parameters.AddWithValue("@Status", vehicle.status);
+                    cmd.Parameters.AddWithValue("@StartDate", (object?)vehicle.StartDate ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@EndDate", (object?)vehicle.EndDate ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Location", vehicle.Location ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Seats", (object?)vehicle.Seats ?? DBNull.Value);
 
-                    cmd.ExecuteNonQuery();
+                    return (int)await cmd.ExecuteScalarAsync();
                 }
             }
         }
 
 
+        public async Task InsertVehicleImages(int vehicleId, List<IFormFile> images)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                await con.OpenAsync();
 
+                string angularPath = @"C:\Users\Sandesh Palekar\myproject\carbikerental\src\assets";
+
+                if (!Directory.Exists(angularPath))
+                    Directory.CreateDirectory(angularPath);
+
+                int count = 1;
+
+                foreach (var file in images)
+                {
+                    string extension = Path.GetExtension(file.FileName).ToLower();
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+
+                    if (!allowedExtensions.Contains(extension))
+                        continue;
+
+                    string fileName = $"{vehicleId}_{count}{extension}";
+                    string fullPath = Path.Combine(angularPath, fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    string imagePath = "assets/" + fileName;
+
+                    string query = @"
+            INSERT INTO VehicleImages (VehicleId, ImageUrl)
+            VALUES (@VehicleId, @ImageUrl)";
+
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@VehicleId", vehicleId);
+                        cmd.Parameters.AddWithValue("@ImageUrl", imagePath);
+
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    count++;
+                }
+            }
+        }
         public void UpdateVehicleStatus(int vehicleId)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
@@ -429,7 +511,7 @@ namespace rentcarbike.Models
 
         //the query related to images vehicle 
         //this query related to images 
-       
+
 
         public void InsertVehicleImage(VehicleImagesClass image)
         {
@@ -449,8 +531,8 @@ namespace rentcarbike.Models
                 }
             }
         }
-       
-       
+
+
 
         //this is use in the get partiuclar vechile in detail 
         public VehicleClass GetVehicleById(int vehicleId)
@@ -527,9 +609,9 @@ ORDER BY vi.ImageId";
 
             return vehicle;
         }
-       
+
         // this is the filter in the search section it is use 
-       
+
         public List<VehicleClass> GetVehiclesWithImagess(
     string vehicle = null,
     DateTime? checkin = null,
@@ -641,6 +723,68 @@ ORDER BY vi.ImageId";
 
             return vehicles;
         }
+
+
+
+
+        //this contact related code 
+        public void AddContact(string name, string email, string phone, string message)
+        {
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = @"INSERT INTO Contact 
+                        (Name, Email, Phone, Message)
+                        VALUES (@Name, @Email, @Phone, @Message)";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    cmd.Parameters.AddWithValue("@Phone", phone);
+                    cmd.Parameters.AddWithValue("@Message", message);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+
+
+        public List<Contact> GetAllContacts()
+        {
+            List<Contact> contacts = new List<Contact>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+
+                string query = "SELECT * FROM Contact ORDER BY CreatedDate DESC";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            contacts.Add(new Contact
+                            {
+                                ContactId = Convert.ToInt32(reader["ContactId"]),
+                                Name = reader["Name"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                Phone = reader["Phone"].ToString(),
+                                Message = reader["Message"].ToString(),
+                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return contacts;
+        }
+        //insert vehle images alll alll 
 
 
     }

@@ -15,41 +15,73 @@ namespace rentcarbike.Controllers
         }
 
         //all endpoint of vehicle table 
-       
 
-        [HttpPost("add-Vehicle")]
-        public IActionResult InsertEmployeeWithLogin([FromBody] VehicleClass vehicle)
+
+        //[HttpPost("add-Vehicle")]
+        //public IActionResult InsertVehicleWithLogin([FromBody] VehicleClass vehicle)
+        //{
+        //    if (vehicle == null)
+        //    {
+        //        return BadRequest("Vehicle data is required.");
+        //    }
+
+        //    try
+        //    {
+        //        _database.InsertVehicle(vehicle);
+        //        return Ok("Vehicle and login inserted successfully.");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log exception (if logging is set up)
+        //        return StatusCode(500, $"Internal server error: {ex.Message}");
+        //    }
+        //}
+        [HttpPost("add-vehicle")]
+        public async Task<IActionResult> AddVehicle([FromBody] vehicleeClass vehicle)
         {
             if (vehicle == null)
-            {
-                return BadRequest("Employee data is required.");
-            }
+                return BadRequest("Vehicle data required");
 
             try
             {
-                _database.InsertVehicle(vehicle);
-                return Ok("Employee and login inserted successfully.");
+                int vehicleId = await _database.InsertVehicle(vehicle);
+                return Ok(new { VehicleId = vehicleId });
             }
             catch (Exception ex)
             {
-                // Log exception (if logging is set up)
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, ex.Message);
             }
         }
+        //insert imageees in the database and also save in the folder
 
-        
-
-
-        // ------------------------------------------------------
-        [HttpPost("insert-the-images")]
-        public IActionResult InsertImage([FromBody] VehicleImagesClass image)
+        [HttpPost("upload-vehicle-images")]
+        public async Task<IActionResult> UploadVehicleImages(
+    [FromForm] int vehicleId,
+    [FromForm] List<IFormFile> images)
         {
-            if (image == null)
-                return BadRequest("Image data is required.");
+            if (images == null || images.Count == 0)
+                return BadRequest("No images provided");
 
-            _database.InsertVehicleImage(image);
-            return Ok("Image inserted successfully.");
+            try
+            {
+                await _database.InsertVehicleImages(vehicleId, images);
+                return Ok(new { message = "Images uploaded successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
+        // ------------------------------------------------------
+        //[HttpPost("insert-the-images")]
+        //public IActionResult InsertImage([FromBody] VehicleImagesClass image)
+        //{
+        //    if (image == null)
+        //        return BadRequest("Image data is required.");
+
+        //    _database.InsertVehicleImage(image);
+        //    return Ok("Image inserted successfully.");
+        //}
 
         
 
@@ -94,12 +126,52 @@ namespace rentcarbike.Controllers
         public IActionResult SetVehicleUnavailable(int vehicleId)
         {
             if (vehicleId <= 0)
-                return BadRequest("Invalid Vehicle Id.");
+                return BadRequest(new { message = "Invalid Vehicle Id." });
 
             _database.UpdateVehicleStatus(vehicleId);
 
-            return Ok("Vehicle status updated to Unavailable successfully.");
+            return Ok(new { message = "Vehicle status updated successfully." });
         }
+        //[HttpPost("upload-image")]
+        //public async Task<IActionResult> UploadImage(IFormFile file, string imageName)
+        //{
+        //    if (file == null || file.Length == 0)
+        //        return BadRequest("No file selected");
+
+        //    if (string.IsNullOrEmpty(imageName))
+        //        return BadRequest("Image name required");
+
+        //    // Get extension automatically (.jpg / .png)
+        //    string extension = Path.GetExtension(file.FileName).ToLower();
+
+        //    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+
+        //    if (!allowedExtensions.Contains(extension))
+        //        return BadRequest("Only JPG and PNG allowed");
+
+        //    string angularPath = @"C:\Users\Sandesh Palekar\myproject\carbikerental\src\assets";
+
+        //    if (!Directory.Exists(angularPath))
+        //        Directory.CreateDirectory(angularPath);
+
+        //    // Combine user name + extension
+        //    string finalFileName = imageName + extension;
+
+        //    string fullPath = Path.Combine(angularPath, finalFileName);
+
+        //    using (var stream = new FileStream(fullPath, FileMode.Create))
+        //    {
+        //        await file.CopyToAsync(stream);
+        //    }
+
+        //    return Ok(new
+        //    {
+        //        imagePath = "assets/" + finalFileName
+        //    });
+        //}
+
+
+
 
     }
 }
